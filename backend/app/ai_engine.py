@@ -332,6 +332,7 @@ class CustomerServiceAIEngine:
                     {"label": "Need more help? Talk to Agent", "action_type": "escalate", "payload": "human agent"}
                 ],
                 "cache_hit": cache_hit,
+                "source": "pulled it from redis",
                 "processing_time_ms": proc_time
             }
 
@@ -354,7 +355,64 @@ class CustomerServiceAIEngine:
                 {"label": "Talk to Human Agent", "action_type": "escalate", "payload": "human agent"}
             ],
             "cache_hit": False,
+            "source": "live_ai",
             "processing_time_ms": proc_time
         }
 
+    def get_or_create_cached_prompt(self, prompt_key: str = "user_vip_context", user_query: str = "What is the return policy for VIP members?", force_refresh: bool = False) -> Dict[str, Any]:
+        """Fetch cached prompt & made-up info from Redis, or populate Redis cache if missing."""
+        redis_key = f"prompt_cache:{prompt_key}"
+
+        if not force_refresh:
+            cached_data = redis_db.get(redis_key)
+            if cached_data:
+                parsed = json.loads(cached_data)
+                ttl = redis_db.ttl(redis_key)
+                return {
+                    "status": "success",
+                    "source": "pulled it from redis",
+                    "cache_hit": True,
+                    "key": redis_key,
+                    "information": parsed,
+                    "message": "Information successfully pulled from Redis cache!",
+                    "ttl_seconds": ttl if (isinstance(ttl, int) and ttl > 0) else 3600
+                }
+
+        # Made up information to be stored in Redis cache
+        made_up_info = {
+            "prompt_key": prompt_key,
+            "user_query": user_query,
+            "customer_profile": {
+                "user_id": "USR-88219-VIP",
+                "customer_name": "Alex Mercer",
+                "tier": "VIP Premier Gold",
+                "account_balance": "$150.00 Store Credit"
+            },
+            "recent_order_context": {
+                "order_id": "#12345",
+                "item": "AeroPro Noise-Canceling Wireless Headphones",
+                "status": "In Transit - Out for Delivery",
+                "carrier": "FedEx Express"
+            },
+            "cached_prompt_response": (
+                "VIP Premier Gold members receive an exclusive 60-day hassle-free return window "
+                "with free return shipping, automated instant store credit refund, and a dedicated 24/7 concierge."
+            ),
+            "generated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+        }
+
+        # Store in Redis with 1 hour TTL (3600 seconds)
+        redis_db.setex(redis_key, 3600, json.dumps(made_up_info))
+
+        return {
+            "status": "success",
+            "source": "populated into redis cache (initial write)",
+            "cache_hit": False,
+            "key": redis_key,
+            "information": made_up_info,
+            "message": "Information generated and cached in Redis. Make the request again to pull it from redis!",
+            "ttl_seconds": 3600
+        }
+
 ai_engine = CustomerServiceAIEngine()
+

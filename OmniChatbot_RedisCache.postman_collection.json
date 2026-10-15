@@ -1,0 +1,116 @@
+{
+	"info": {
+		"_postman_id": "8a7c2b5d-1234-4567-89ab-cdef01234567",
+		"name": "OmniChatbot Redis Cache API",
+		"description": "Postman collection to test FastAPI Redis-backed Chatbot and Cached Prompt endpoint for screenshots.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Root API Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						""
+					]
+				},
+				"description": "Checks backend status and active Redis connection engine."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Fetch Cached Prompt Info (Pulled from Redis)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"prompt_key\": \"user_vip_context\",\n  \"user_query\": \"What is the return policy for VIP members?\",\n  \"force_refresh\": false\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/chat/cached-prompt",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"chat",
+						"cached-prompt"
+					]
+				},
+				"description": "Returns made-up user & order context stored in cache. Returns 'source': 'pulled it from redis'."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Send Chat Message (FAQ Cache Hit)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"session_id\": \"postman_session_88\",\n  \"message\": \"What is your return policy?\",\n  \"customer_name\": \"Postman Tester\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/chat/message",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"chat",
+						"message"
+					]
+				},
+				"description": "Sends customer chat message. Triggers Redis FAQ cache hit returning 'source': 'pulled it from redis'."
+			},
+			"response": []
+		},
+		{
+			"name": "4. Redis Key Inspector",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/redis/keys",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"redis",
+						"keys"
+					]
+				},
+				"description": "Inspects all keys, TTLs, and data types currently stored in Redis."
+			},
+			"response": []
+		}
+	]
+}

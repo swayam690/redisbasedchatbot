@@ -3,12 +3,23 @@ import time
 import uuid
 from typing import List
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
-from app.models import ChatMessageRequest, ChatMessageResponse, RatingRequest
+from app.models import ChatMessageRequest, ChatMessageResponse, RatingRequest, CachedPromptRequest, CachedPromptResponse
 from app.redis_client import redis_db
 from app.ai_engine import ai_engine
 from app.config import SESSION_TTL
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
+
+@router.post("/cached-prompt", response_model=CachedPromptResponse)
+async def get_cached_prompt(request: CachedPromptRequest = CachedPromptRequest()):
+    """Retrieve made-up context information stored in Redis cache or populate if missing."""
+    res = ai_engine.get_or_create_cached_prompt(
+        prompt_key=request.prompt_key or "user_vip_context",
+        user_query=request.user_query or "What is the return policy for VIP members?",
+        force_refresh=request.force_refresh or False
+    )
+    return res
+
 
 # Active WebSocket connections mapping: session_id -> List[WebSocket]
 active_connections: dict[str, List[WebSocket]] = {}

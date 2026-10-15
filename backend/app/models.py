@@ -23,6 +23,7 @@ class ChatMessageResponse(BaseModel):
     actions: Optional[List[ActionButton]] = []
     card_data: Optional[Dict[str, Any]] = None
     cache_hit: Optional[bool] = False
+    source: Optional[str] = "live_ai"
     processing_time_ms: Optional[float] = 0.0
     needs_agent: Optional[bool] = False
 
@@ -54,3 +55,18 @@ class RatingRequest(BaseModel):
     session_id: str
     score: int = Field(..., ge=1, le=5)
     feedback: Optional[str] = None
+
+class CachedPromptRequest(BaseModel):
+    prompt_key: Optional[str] = "user_vip_context"
+    user_query: Optional[str] = "What is the return policy for VIP members?"
+    force_refresh: Optional[bool] = False
+
+class CachedPromptResponse(BaseModel):
+    status: str
+    source: str
+    cache_hit: bool
+    key: str
+    information: Dict[str, Any]
+    message: str
+    ttl_seconds: int
+
